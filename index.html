@@ -1076,7 +1076,7 @@ new Chart(internetCtx, {
     responsive: true,
     maintainAspectRatio: false,
     indexAxis: 'y',
-    layout: { padding: { left: 10, right: 10, top: 4, bottom: 4 } },
+    layout: { padding: { left: 0, right: 10, top: 4, bottom: 4 } },
     plugins: {
       legend: { display: false },
       tooltip: {
@@ -1102,8 +1102,9 @@ new Chart(internetCtx, {
         ticks: {
           color: '#9A9080',
           font: { family: 'JetBrains Mono', size: 10 },
-          padding: 8
-        }
+          padding: 4
+        },
+        afterFit(scale) { scale.width = 130; }
       }
     }
   }
@@ -1123,9 +1124,10 @@ const adoptCtx = document.getElementById('adoptionChart').getContext('2d');
 const adoptData = [27375, 5840, 2555, 1642, 912, 270, 61];
 const adoptLabels = ['Telephone','Mobile phones','Internet','Facebook','Instagram','TikTok','ChatGPT'];
 
-// Use a custom linear scale with display labels showing human-readable time
-// Map raw days → display as years or days in tooltip
-// For the axis: use 5 evenly spaced ticks from 0 to 30000
+// Custom logarithmic plugin to force exact tick positions
+const explicitTicks = [61, 365, 912, 2555, 5840, 27375];
+const tickLabels = { 61:'61 days', 365:'1 yr', 912:'2.5 yrs', 2555:'7 yrs', 5840:'16 yrs', 27375:'75 yrs' };
+
 new Chart(adoptCtx, {
   type: 'bar',
   data: {
@@ -1134,7 +1136,7 @@ new Chart(adoptCtx, {
       label: 'Days to 100M users',
       data: adoptData,
       backgroundColor: adoptData.map((v, i) => i === 6 ? 'rgba(232,76,43,0.8)' : 'rgba(200,169,110,0.5)'),
-      borderColor:     adoptData.map((v, i) => i === 6 ? 'rgba(232,76,43,1)' : 'rgba(200,169,110,0.8)'),
+      borderColor:     adoptData.map((v, i) => i === 6 ? 'rgba(232,76,43,1)'   : 'rgba(200,169,110,0.8)'),
       borderWidth: 1,
     }]
   },
@@ -1160,17 +1162,19 @@ new Chart(adoptCtx, {
         ticks: { color: '#9A9080', font: { family: 'JetBrains Mono', size: 10 } }
       },
       y: {
-        min: 0,
-        max: 30000,
+        type: 'logarithmic',
+        min: 30,
+        max: 50000,
         grid: { color: 'rgba(200,169,110,0.06)' },
+        afterBuildTicks(axis) {
+          axis.ticks = [61,365,912,2555,5840,27375].map(v => ({ value: v }));
+        },
         ticks: {
           color: '#9A9080',
           font: { family: 'JetBrains Mono', size: 10 },
-          stepSize: 5000,
-          callback: v => {
-            if (v === 0) return '0';
-            const yrs = v / 365;
-            return yrs >= 1 ? Math.round(yrs) + ' yrs' : v + 'd';
+          callback(v) {
+            const m = {61:'61 days',365:'1 yr',912:'2.5 yrs',2555:'7 yrs',5840:'16 yrs',27375:'75 yrs'};
+            return m[v] || null;
           }
         }
       }
@@ -1181,7 +1185,7 @@ new Chart(adoptCtx, {
 // Annotation for ChatGPT bar
 const adoptNote = document.createElement('div');
 adoptNote.style.cssText = 'font-family:JetBrains Mono,monospace;font-size:10px;color:rgba(232,76,43,0.8);margin-top:6px;text-align:right;letter-spacing:0.08em;';
-adoptNote.textContent = '↑ ChatGPT: 61 days — note the logarithmic scale';
+adoptNote.textContent = '↑ ChatGPT: 61 days — scale is logarithmic so bar heights reflect proportional speed differences';
 document.getElementById('adoptionChart').parentNode.parentNode.appendChild(adoptNote);
 </script>
 </body>
